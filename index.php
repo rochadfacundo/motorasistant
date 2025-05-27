@@ -1,5 +1,5 @@
 <?php
-echo "<p>Link de pago: <a href='$link' target='_blank'>$link</a></p>";
+
 require 'vendor/autoload.php';
 
 use Dotenv\Dotenv;
@@ -16,20 +16,46 @@ MercadoPagoConfig::setAccessToken($access_token);
 
 $client = new PreferenceClient();
 
-$link = $preference->init_point;  
-
+$backUrls=[
+  "success"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/redirects/success.php",
+  "failure"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/index.php",
+  "pending"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/redirects/pending.php",
+];
+try {
 $preference = $client->create([
   "items"=>[
     [
       "id"=>"15125123123",
       "title"=>"Contrato 0303 Factura Nro 456",
+      "description"=>"Plan Potenciado",
       "quantity"=>1,
       "unit_price"=>5
     ],
+
+  ],
+
+  "back_urls"=> $backUrls,
+  "auto_return"=>"approved",
+  "payment_methods"=>[
+    "installments"=>12
   ],
   "statement_descriptor"=>"Motor assistant",
   "external_reference"=>"PlanPotenciadoMA91203"
 ]);
+$link = $preference->init_point;  
+} catch (Exception $e) {
+  echo "<h1>Error al crear la preferencia:</h1>";
+
+  // Si es una excepción de MercadoPago, podés acceder al response
+  if (method_exists($e, 'getApiResponse')) {
+      echo "<pre>";
+      print_r($e->getApiResponse());
+      echo "</pre>";
+  } else {
+      echo "<pre>" . $e->getMessage() . "</pre>";
+  }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -59,14 +85,22 @@ $preference = $client->create([
   </div>
 
   <script>
+    
     const mp = new MercadoPago("<?= $public_key ?>");
 
     mp.bricks().create("wallet","wallet_container",{
       initialization:{
         preferenceId: '<?php echo $preference->id;?>',
-        redirectMode: 'modal'
+        redirectMode: 'self'
       }
     });
   </script>
+
+<p>
+  🔗 Link de pago directo: 
+  <a href="<?= $preference->init_point ?>" target="_blank">
+    <?= $preference->init_point ?>
+  </a>
+</p>
 </body>
 </html>
