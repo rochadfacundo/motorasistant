@@ -1,0 +1,50 @@
+# Archivos de configuración y secretos
+.env
+.env.*
+!.env.example
+
+# Dependencias de Composer
+/vendor/
+
+# carpeta de conexion
+/config/
+/config/*
+
+# Logs
+*.log
+logs/
+storage/logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+*.bak
+*.old
+
+# Configuración de IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos de entorno de XAMPP o específicos del sistema
+xamppfiles/
+*.pid
+*.sock
+
+# Archivos relacionados a pruebas o cargas temporales
+/tests/
+/uploads/
+/tmp/
+/cache/
+
+# Archivos de Composer lock (opcional, según tu estrategia de versión)
+# composer.lock
+
+# Carpeta de ejecución en XAMPP (si la duplicás ahí)
+# /opt/lampp/htdocs/motorasistant/
