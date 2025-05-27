@@ -31,7 +31,6 @@ $preference = $client->create([
       "quantity"=>1,
       "unit_price"=>5
     ],
-
   ],
 
   "back_urls"=> $backUrls,
