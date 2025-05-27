@@ -4,7 +4,7 @@ require 'vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
-$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv::createImmutable(__DIR__, '.env.mp');
 $dotenv->load();
 
 $access_token = $_ENV['MP_ACCESS_TOKEN'];

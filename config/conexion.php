@@ -3,7 +3,7 @@ require 'loadEnv.php';
 
 try {
     // Cargar las variables de entorno desde .env
-   loadEnv(__DIR__ . '/../.env');
+   loadEnv(__DIR__ . '/../.env.db');
 
     // Leer las variables de entorno
     $host = getenv('DB_HOST');

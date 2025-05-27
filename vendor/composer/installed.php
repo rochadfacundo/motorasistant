@@ -3,7 +3,7 @@
         'name' => 'facundo/prueba-mercadopago',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '772673e445f836d8c0d6150af24f8a24e92996ff',
+        'reference' => '736db99736163dc6f5adf4d882e5d1d213c3fe3e',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'facundo/prueba-mercadopago' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '772673e445f836d8c0d6150af24f8a24e92996ff',
+            'reference' => '736db99736163dc6f5adf4d882e5d1d213c3fe3e',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

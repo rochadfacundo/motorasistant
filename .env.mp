@@ -1,0 +1,8 @@
+MP_ACCESS_TOKEN=algo
+MP_PUBLIC_KEY=algo
+
+MP_ACCESS_TOKENmati=algo
+MP_PUBLIC_KEYmati=algo
+
+MP_ACCESS_TOKEN2=algo
+MP_PUBLIC_KEY2=algo
