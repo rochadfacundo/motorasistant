@@ -17,9 +17,9 @@ MercadoPagoConfig::setAccessToken($access_token);
 $client = new PreferenceClient();
 
 $backUrls=[
-  "success"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/redirects/success.php",
-  "failure"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/index.php",
-  "pending"=>"https://c4cf-2802-8010-b108-2900-f03-cd82-4992-c33.ngrok-free.app/motorasistant/redirects/pending.php",
+  "success"=>"https://1a2a-2802-8010-b14d-6200-f402-52b5-1a19-4793.ngrok-free.app/motorasistant/redirects/success.php",
+  "failure"=>"https://1a2a-2802-8010-b14d-6200-f402-52b5-1a19-4793.ngrok-free.app/motorasistant/index.php",
+  "pending"=>"https://1a2a-2802-8010-b14d-6200-f402-52b5-1a19-4793.ngrok-free.app/motorasistant/redirects/pending.php",
 ];
 try {
 $preference = $client->create([
@@ -38,6 +38,11 @@ $preference = $client->create([
   "payment_methods"=>[
     "installments"=>12
   ],
+  "payer"=>[
+    "name"=> "Juancito",
+    "surname"=> "Lopez",
+    "email"=> "comprador@gmail.com",
+  ],
   "statement_descriptor"=>"Motor assistant",
   "external_reference"=>"PlanPotenciadoMA91203"
 ]);
@@ -45,7 +50,7 @@ $link = $preference->init_point;
 } catch (Exception $e) {
   echo "<h1>Error al crear la preferencia:</h1>";
 
-  // Si es una excepción de MercadoPago, podés acceder al response
+  // Excepción de MercadoPago, accede al response
   if (method_exists($e, 'getApiResponse')) {
       echo "<pre>";
       print_r($e->getApiResponse());
@@ -66,12 +71,12 @@ $link = $preference->init_point;
 
   <style>
   #wallet_wrapper {
-    max-width: 400px; /* Podés ajustar el ancho a gusto */
-    margin: 0 auto;   /* Centra horizontalmente */
+    max-width: 400px; 
+    margin: 0 auto;  
   }
 
   #wallet_container {
-    width: 100%; /* Hace que el botón se ajuste al wrapper */
+    width: 100%; 
   }
 </style>
 </head>
@@ -96,7 +101,7 @@ $link = $preference->init_point;
   </script>
 
 <p>
-  🔗 Link de pago directo: 
+  🔗 Link de pago directo MP: 
   <a href="<?= $preference->init_point ?>" target="_blank">
     <?= $preference->init_point ?>
   </a>
