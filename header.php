@@ -1,7 +1,20 @@
 <?php
+
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Llega un admin
+if (!isset($_SESSION['usuario'])) {
+    $_SESSION['usuario'] = [
+        'id' => 1,
+        'nombre' => 'Admin Test',
+        'email' => 'admin@motorasistant.com',
+        'rol' => 'administrador'
+    ];
+}
+
 // Define una base URL para el proyecto
 $baseUrl = '/motorasistant/';
 
