@@ -19,7 +19,6 @@ if (!isset($pageTitle)) {
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Estilos generales (si querés incluirlos) -->
     <style>
         #wallet_wrapper {
             max-width: 400px;

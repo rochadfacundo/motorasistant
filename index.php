@@ -6,7 +6,7 @@ use Dotenv\Dotenv;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Preference\PreferenceClient;
 
-$dotenv = Dotenv::createImmutable(__DIR__, '.env.mp');
+$dotenv = Dotenv::createImmutable(__DIR__, '.env');
 $dotenv->load();
 
 $access_token = $_ENV['MP_ACCESS_TOKEN'];
@@ -17,9 +17,9 @@ MercadoPagoConfig::setAccessToken($access_token);
 $client = new PreferenceClient();
 
 $backUrls = [
-    "success" => "https://4f2e-2802-8010-b199-b800-4b37-a19a-1a0-bb5.ngrok-free.app/motorasistant/redirects/success.php",
-    "failure" => "https://4f2e-2802-8010-b199-b800-4b37-a19a-1a0-bb5.ngrok-free.app/motorasistant/redirects/failure.php",
-    "pending" => "https://4f2e-2802-8010-b199-b800-4b37-a19a-1a0-bb5.ngrok-free.app/motorasistant/redirects/pending.php",
+    "success" => "https://66e5-2802-8010-b190-3400-5489-ad52-c02-38ab.ngrok-free.app/motorasistant/redirects/success.php",
+    "failure" => "https://66e5-2802-8010-b190-3400-5489-ad52-c02-38ab.ngrok-free.app/motorasistant/redirects/failure.php",
+    "pending" => "https://66e5-2802-8010-b190-3400-5489-ad52-c02-38ab.ngrok-free.app/motorasistant/redirects/pending.php",
 ];
 
 try {
