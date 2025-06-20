@@ -1,6 +1,6 @@
-# MotorAssistant - Sistema de Facturación Electrónica Integrada
+# Sistema de Facturación Electrónica Integrada
 
-MotorAssistant es una plataforma desarrollada en PHP que automatiza la **generación de facturas electrónicas** ante AFIP tras
+Plataforma desarrollada en PHP que automatiza la **generación de facturas electrónicas** ante AFIP tras
 la **verificación de pagos aprobados en MercadoPago**.
 Ideal para empresas que necesitan emitir facturas de forma inmediata y confiable al confirmar un pago online.
 
