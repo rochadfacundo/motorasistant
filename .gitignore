@@ -3,6 +3,18 @@
 .env.*
 !.env.example
 
+# Archivos sensibles de facturación AFIP
+factura/certs/TRA.xml
+factura/certs/TA.xml
+factura/certs/averia.csr
+factura/certs/averia.key
+factura/certs/certificado.certificado
+factura/certs/openssl.cnf
+factura/certs/request-loginCms.xml
+factura/certs/response-loginCms.xml
+factura/tipsFacturacion.txt
+
+
 # Dependencias de Composer
 /vendor/
 

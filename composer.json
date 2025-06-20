@@ -15,6 +15,8 @@
     "require": {
         "mercadopago/sdk": "^0.5.6",
         "mercadopago/dx-php": "^3.2",
-        "vlucas/phpdotenv": "^5.6"
+        "vlucas/phpdotenv": "^5.6",
+        "dompdf/dompdf": "^3.1",
+        "phpseclib/phpseclib": "^3.0"
     }
 }
