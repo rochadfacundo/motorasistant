@@ -97,6 +97,7 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
         // Intentar detectar estructura
         $detalle = $res['FeDetResp']['FECAEDetResponse'][0] ?? $res;
         $cae = $detalle['CAE'] ?? null;
+        $fechaVencimientoCae = $detalle['CAEFchVto'] ?? null;
         $ptoVtaResp = $res['FeCabResp']['PtoVta'] ?? $ptoVta;
         $cbteDesde = $res['FeCabResp']['CbteDesde'] ?? $nroComprobante;
 
@@ -117,6 +118,7 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
             'numero'        => $cbteDesde,
             'nroFormateado' => str_pad($ptoVtaResp, 4, '0', STR_PAD_LEFT) . '-' . str_pad($cbteDesde, 8, '0', STR_PAD_LEFT),
             'cae'           => $cae,
+            'fechaVencimientoCae'    => $fechaVencimientoCae,
             'tipo'          => tipoFacturaPorCodigo($cbteTipo),
             'ptoVta'        => $ptoVtaResp
         ];
