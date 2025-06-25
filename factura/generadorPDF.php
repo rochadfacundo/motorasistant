@@ -38,9 +38,9 @@ class GeneradorPDF {
 
             $qrImgTag = "
                 <div style='text-align: center;'>
-                    <img src='data:image/png;base64,{$qrBase64}' alt='QR AFIP' width='120'><br>
+                    <img src='data:image/png;base64,{$qrBase64}' alt='QR AFIP' width='200'><br>
                     <div style='font-size: 10px; margin-top: 5px;'>
-                        Escaneá este código para verificar esta factura en el sitio de AFIP.
+                        Escaneá este código para verificar la factura en el sitio de AFIP.
                     </div>
                 </div>";
 

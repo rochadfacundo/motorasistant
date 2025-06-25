@@ -118,10 +118,12 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
             'numero'        => $cbteDesde,
             'nroFormateado' => str_pad($ptoVtaResp, 4, '0', STR_PAD_LEFT) . '-' . str_pad($cbteDesde, 8, '0', STR_PAD_LEFT),
             'cae'           => $cae,
-            'fechaVencimientoCae'    => $fechaVencimientoCae,
+            'fechaVencimientoCae' => $fechaVencimientoCae,
+            'codigoTipo'    => $cbteTipo,
             'tipo'          => tipoFacturaPorCodigo($cbteTipo),
             'ptoVta'        => $ptoVtaResp
         ];
+        
 
     } catch (\Throwable $th) {
         Logger::logWebhook("❌ Error al emitir factura:\n" .

@@ -14,8 +14,10 @@ class QrService {
             "tipoDocRec" => 99,
             "nroDocRec" => 0,
             "tipoCodAut" => "E",
-            "codAut" => (string)$params['cae'] // asegurar que es string, no null
+            "codAut" => (string)$params['cae']
         ];
+
+        Logger::logWebhook("📤 JSON para QR:\n" . json_encode($data, JSON_PRETTY_PRINT));
 
         $base64 = base64_encode(json_encode($data, JSON_UNESCAPED_SLASHES));
         return "https://www.afip.gob.ar/fe/qr/?p=" . $base64;

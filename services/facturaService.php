@@ -19,15 +19,17 @@ class FacturaService {
         // Datos de la respuesta AFIP
         $afipResponse = obtenerDatosFactura($pago->transaction_amount);
     
-        if ($afipResponse['cae'] === 'ERROR') {
-            Logger::logWebhook("❌ No se insertó en DB porque la factura no se generó correctamente.");
+        if (!isset($afipResponse['cae']) || $afipResponse['cae'] === null || $afipResponse['cae'] === 'ERROR') {
+            Logger::logWebhook("❌ No se insertó en DB porque la factura no se generó correctamente. CAE: " . var_export($afipResponse['cae'], true));
             return;
         }
-    
+        
+        Logger::logWebhook("🧪 Respuesta AFIP: " . json_encode($afipResponse));
+
         $numeroFactura = $afipResponse['numero'];
         $cae = $afipResponse['cae'];
         $nroFormateado = $afipResponse['nroFormateado'];
-        $tipoComprobante = $afipResponse['tipo'];
+        $tipoComprobante = $afipResponse['codigoTipo'];
         $puntoVenta = $afipResponse['ptoVta'];
         $importe = $pago->transaction_amount;
 
