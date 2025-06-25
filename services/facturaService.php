@@ -12,7 +12,7 @@ class FacturaService {
     }
 
     public static function generarYGuardarFactura($pago): void {
-        prepararAutenticacionAfip();
+       // prepararAutenticacionAfip();
         
         $linea = date('c') . " - ✅ {$pago->id} - {$pago->status} - {$pago->transaction_amount} - {$pago->payer->email}\n";
         file_put_contents(__DIR__ . '/../logs/pagos.log', $linea, FILE_APPEND);
@@ -30,6 +30,11 @@ class FacturaService {
 
         // Datos de la respuesta AFIP
         $afipResponse = obtenerDatosFactura($pago->transaction_amount);
+
+        if ($afipResponse['cae'] === 'ERROR') {
+            Logger::logWebhook("❌ No se insertó en DB porque la factura no se generó correctamente.");
+            return;
+        }
 
         $numeroFactura = $afipResponse['numero'];
         $cae = $afipResponse['cae'];

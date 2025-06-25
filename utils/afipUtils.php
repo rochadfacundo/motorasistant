@@ -1,5 +1,7 @@
 <?php
 
+
+
 function token_expirado($rutaTA): bool {
     if (!file_exists($rutaTA)) return true;
 
@@ -10,15 +12,22 @@ function token_expirado($rutaTA): bool {
 }
 
 function prepararAutenticacionAfip(): void {
-    $rutaTA = __DIR__ . '/../factura/certs/TA.xml';
+
+    //Ruta ta
+    $rutaTA = __DIR__ . '/../factura/certs/TA.xml';  
+    //Ruta certs  
+    $certsPath = realpath(__DIR__ . '/../factura/certs');
+
+    //Llamada wsfe
+    $wsfe="php wsaa-client.php wsfe";
 
     if (token_expirado($rutaTA)) {
         $salida = [];
         $codigo = 0;
 
-        
-        $certsPath = realpath(__DIR__ . '/../factura/certs');
-        $cmd = "cd {$certsPath} && php wsaa-client.php wsfe";
+        $cmd = "cd {$certsPath} && {$wsfe}";
+
+        //Llamada para obtener el ta.xml
         exec($cmd, $salida, $codigo);
 
         $logPath = __DIR__ . '/../logs/webhook.log';
@@ -39,71 +48,99 @@ function prepararAutenticacionAfip(): void {
     }
 }
 
-
 function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): array {
     require_once __DIR__ . '/../vendor/autoload.php';
     require_once __DIR__ . '/logger.php';
 
-    $CUIT = 20356083882;
-    
+    $CUIT = "30718607961";
     $afip = new Afip([
         'CUIT' => $CUIT,
         'production' => false,
         'cert' => file_get_contents(__DIR__ . '/../factura/certs/cert.pem'),
         'key'  => file_get_contents(__DIR__ . '/../factura/certs/key.pem')
-
     ]);
 
     try {
-        $cbteTipo = 11;  // Factura C
+        $cbteTipo = 11;
         $ptoVta = 1;
+        $concepto = 2;
 
-        $lastVoucher = $afip->ElectronicBilling->GetLastVoucher($CUIT, $cbteTipo, $ptoVta);
+        $lastVoucher = $afip->ElectronicBilling->GetLastVoucher($ptoVta, $cbteTipo);
         $nroComprobante = $lastVoucher + 1;
 
         $data = [
-            'CantReg'   => 1,
-            'PtoVta'    => $ptoVta,
-            'CbteTipo'  => $cbteTipo,
-            'Concepto'  => 1,           // Productos
-            'DocTipo'   => $docTipo,    // 99 = consumidor final, 80 = CUIT, etc.
-            'DocNro'    => $docNro,
-            'CbteDesde' => $nroComprobante,
-            'CbteHasta' => $nroComprobante,
-            'CbteFch'   => date('Ymd'),
-            'ImpTotal'  => $monto,
-            'ImpNeto'   => $monto,
-            'ImpIVA'    => 0.00,
-            'MonId'     => 'PES',
-            'MonCotiz'  => 1
+            'CbteTipo'      => $cbteTipo,
+            'PtoVta'        => $ptoVta,
+            'Concepto'      => $concepto,
+            'DocTipo'       => $docTipo,
+            'DocNro'        => $docNro,
+            'CbteDesde'     => $nroComprobante,
+            'CbteHasta'     => $nroComprobante,
+            'CbteFch'       => date('Ymd'),
+            'ImpTotal'      => $monto,
+            'ImpTotConc'    => 0.00,
+            'ImpNeto'       => $monto,
+            'ImpOpEx'       => 0.00,
+            'ImpIVA'        => 0.00,
+            'ImpTrib'       => 0.00,
+            'CondicionIVAReceptorId' => 5,
+            'FchServDesde'  => date('Ymd'),
+            'FchServHasta'  => date('Ymd'),
+            'FchVtoPago'    => date('Ymd'),
+            'MonId'         => 'PES',
+            'MonCotiz'      => 1.00
         ];
 
-        Logger::logWebhook("🧾 Solicitando comprobante a AFIP: " . json_encode($data));
+        Logger::logWebhook("🧾 JSON enviado a AFIP:\n" . json_encode($data, JSON_PRETTY_PRINT));
+        $res = $afip->ElectronicBilling->CreateVoucher($data);
 
-        $res = $afip->ElectronicBilling->CreateNextVoucher($data);
+        // Intentar detectar estructura
+        $detalle = $res['FeDetResp']['FECAEDetResponse'][0] ?? $res;
+        $cae = $detalle['CAE'] ?? null;
+        $ptoVtaResp = $res['FeCabResp']['PtoVta'] ?? $ptoVta;
+        $cbteDesde = $res['FeCabResp']['CbteDesde'] ?? $nroComprobante;
 
-        Logger::logWebhook("✅ Comprobante emitido. CAE: " . $res['FeDetResp']['FECAEDetResponse'][0]['CAE']);
+        if (empty($cae)) {
+            Logger::logWebhook("❌ AFIP no devolvió un CAE válido. Respuesta completa:\n" . json_encode($res, JSON_PRETTY_PRINT));
+            return [
+                'numero'        => null,
+                'nroFormateado' => null,
+                'cae'           => 'ERROR',
+                'tipo'          => 'Error',
+                'ptoVta'        => 0
+            ];
+        }
+
+        Logger::logWebhook("✅ Comprobante emitido. CAE: " . $cae);
 
         return [
-            'numero'       => $res['FeCabResp']['CbteDesde'], // ej: 12 (INT)
-            'nroFormateado'=> str_pad($res['FeCabResp']['PtoVta'], 4, '0', STR_PAD_LEFT) . '-' .
-                            str_pad($res['FeCabResp']['CbteDesde'], 8, '0', STR_PAD_LEFT),
-            'cae'          => $res['FeDetResp']['FECAEDetResponse'][0]['CAE'],
-            'tipo'         => tipoFacturaPorCodigo($res['FeCabResp']['CbteTipo']),
-            'ptoVta'       => $res['FeCabResp']['PtoVta']
+            'numero'        => $cbteDesde,
+            'nroFormateado' => str_pad($ptoVtaResp, 4, '0', STR_PAD_LEFT) . '-' . str_pad($cbteDesde, 8, '0', STR_PAD_LEFT),
+            'cae'           => $cae,
+            'tipo'          => tipoFacturaPorCodigo($cbteTipo),
+            'ptoVta'        => $ptoVtaResp
         ];
-        
+
     } catch (\Throwable $th) {
-        Logger::logWebhook("❌ Error al emitir factura: " . $th->getMessage());
-        echo "❌ Error al emitir factura: " . $th->getMessage();
+        Logger::logWebhook("❌ Error al emitir factura:\n" .
+            "🧨 Mensaje: " . $th->getMessage() . "\n" .
+            "📂 Archivo: " . $th->getFile() . "\n" .
+            "📍 Línea: " . $th->getLine() . "\n" .
+            "📋 Trace: " . $th->getTraceAsString()
+        );
+
         return [
-            'numero' => '0000-00000000',
-            'cae'    => 'ERROR',
-            'tipo'   => 'Error',
-            'ptoVta' => 0
+            'numero'        => null,
+            'nroFormateado' => null,
+            'cae'           => 'ERROR',
+            'tipo'          => 'Error',
+            'ptoVta'        => 0
         ];
     }
 }
+
+
+
 
 
 
@@ -115,4 +152,5 @@ function tipoFacturaPorCodigo($codigo): string {
         default => 'Desconocido',
     };
 }
+
 
