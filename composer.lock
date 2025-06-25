@@ -4,8 +4,59 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ac59309fbfc0fa980b17fa76427b2136",
+    "content-hash": "79f7576d4135b73ca780c6fed6fed566",
     "packages": [
+        {
+            "name": "afipsdk/afip.php",
+            "version": "v1.1.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AfipSDK/afip.php.git",
+                "reference": "4b3c00a904264cca7923cc4b3e6a3363522505b5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AfipSDK/afip.php/zipball/4b3c00a904264cca7923cc4b3e6a3363522505b5",
+                "reference": "4b3c00a904264cca7923cc4b3e6a3363522505b5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.3"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Afip.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Afip SDK",
+                    "email": "afipsdk@gmail.com"
+                }
+            ],
+            "description": "Libreria para usar los Web Services de AFIP (Argentina) ",
+            "homepage": "https://github.com/afipsdk/afip.php",
+            "keywords": [
+                "afip",
+                "cae",
+                "contribuyente",
+                "facturacion-electronica",
+                "gratis",
+                "libreria",
+                "padron",
+                "soap"
+            ],
+            "support": {
+                "issues": "https://github.com/AfipSDK/afip.php/issues",
+                "source": "https://github.com/AfipSDK/afip.php/tree/v1.1.4"
+            },
+            "time": "2025-01-27T19:49:46+00:00"
+        },
         {
             "name": "dompdf/dompdf",
             "version": "v3.1.0",

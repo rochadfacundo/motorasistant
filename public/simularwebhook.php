@@ -1,14 +1,15 @@
 <?php
-require_once __DIR__ . '/../controller/PagoController.php';
+require_once __DIR__ . '/../controller/pagoController.php';
 require_once __DIR__ . '/../services/mercadoPago.php';
 require_once __DIR__ . '/../services/facturaService.php';
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
 // ID del pago aprobado real
-$paymentId = '115241790409';
+$paymentId = '115822177499';
+
 
 $pago = MercadoPagoService::obtenerPagoPorId($paymentId);
 

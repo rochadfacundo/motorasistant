@@ -1,35 +1,39 @@
 <?php
 require_once __DIR__ . '/utils/db.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 try {
     $pdo = DB::getConnection();
-    $stmt = $pdo->query("SELECT * FROM cliente");
-    $clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if (!$clientes) {
-        echo "⚠️ No hay clientes registrados.";
-    } else {
-        echo "<h2>📋 Lista de clientes:</h2><table border='1' cellpadding='8'>";
-        echo "<tr>";
-        foreach (array_keys($clientes[0]) as $col) {
-            echo "<th>$col</th>";
-        }
-        echo "</tr>";
+    $stmt = $pdo->prepare("CALL insertarFactura(
+        :pPaymentId,
+        :pNumeroFactura,
+        :pCAE,
+        :pPdfPath,
+        :pTipoComprobante,
+        :pPuntoVenta,
+        :pImporte
+    )");
 
-        foreach ($clientes as $cliente) {
-            echo "<tr>";
-            foreach ($cliente as $valor) {
-                echo "<td>" . htmlspecialchars($valor) . "</td>";
-            }
-            echo "</tr>";
-        }
+    // Datos ficticios
+    $paymentId = 'FAKE123456';
+    $numeroFactura = 1001;
+    $cae = '12345678901234';
+    $pdfPath = 'facturas/factura_fake.pdf';
+    $tipoComprobante = 'FA';
+    $puntoVenta = 1;
+    $importe = 12345.67;
 
-        echo "</table>";
-    }
+    $stmt->bindParam(':pPaymentId', $paymentId);
+    $stmt->bindParam(':pNumeroFactura', $numeroFactura);
+    $stmt->bindParam(':pCAE', $cae);
+    $stmt->bindParam(':pPdfPath', $pdfPath);
+    $stmt->bindParam(':pTipoComprobante', $tipoComprobante);
+    $stmt->bindParam(':pPuntoVenta', $puntoVenta);
+    $stmt->bindParam(':pImporte', $importe);
+
+    $stmt->execute();
+
+    echo "✅ Factura ficticia insertada correctamente.";
 } catch (PDOException $e) {
-    echo "❌ Error al obtener los clientes: " . $e->getMessage();
+    echo "❌ Error al insertar factura: " . $e->getMessage();
 }

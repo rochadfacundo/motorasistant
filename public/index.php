@@ -28,9 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $client = new PreferenceClient();
 
         $backUrls = [
-            "success" => "https://503c-190-175-21-52.ngrok-free.app/redirects/success.php",
-            "failure" => "https://503c-190-175-21-52.ngrok-free.app/redirects/failure.php",
-            "pending" => "https://503c-190-175-21-52.ngrok-free.app/redirects/pending.php",
+            "success" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/success.php",
+            "failure" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/failure.php",
+            "pending" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/pending.php",
         ];
 
 

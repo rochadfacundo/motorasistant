@@ -8,6 +8,8 @@ factura/certs/TRA.xml
 factura/certs/TA.xml
 factura/certs/averia.csr
 factura/certs/averia.key
+factura/certs/cert.pem
+factura/certs/key.pem
 factura/certs/certificado.certificado
 factura/certs/openssl.cnf
 factura/certs/request-loginCms.xml

@@ -40,42 +40,72 @@ function prepararAutenticacionAfip(): void {
 }
 
 
-function obtenerDatosFactura(): array {
- 
-    // ya se ejecuto FECAESolicitar y hay respuesta guardada
-    global $afip, $CUIT;
+function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): array {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    require_once __DIR__ . '/logger.php';
 
-    $lastVoucher = $afip->ElectronicBilling->GetLastVoucher($CUIT, 11, 1); 
-    // tipo 11, pto vta 1
-    $nroComprobante = $lastVoucher + 1;
+    $CUIT = 20356083882;
+    
+    $afip = new Afip([
+        'CUIT' => $CUIT,
+        'production' => false,
+        'cert' => file_get_contents(__DIR__ . '/../factura/certs/cert.pem'),
+        'key'  => file_get_contents(__DIR__ . '/../factura/certs/key.pem')
 
-    $data = [
-        'CantReg' => 1,
-        'PtoVta' => 1,
-        'CbteTipo' => 11,
-        'Concepto' => 1,
-        'DocTipo' => 99,
-        'DocNro' => 0,
-        'CbteDesde' => $nroComprobante,
-        'CbteHasta' => $nroComprobante,
-        'CbteFch' => date('Ymd'),
-        'ImpTotal' => 100.00,
-        'ImpNeto' => 100.00,
-        'ImpIVA' => 0.00,
-        'MonId' => 'PES',
-        'MonCotiz' => 1
-    ];
+    ]);
 
-    $res = $afip->ElectronicBilling->CreateNextVoucher($data);
+    try {
+        $cbteTipo = 11;  // Factura C
+        $ptoVta = 1;
 
-    return [
-        'numero' => str_pad($res['FeCabResp']['PtoVta'], 4, '0', STR_PAD_LEFT) . '-' .
-                    str_pad($res['FeCabResp']['CbteDesde'], 8, '0', STR_PAD_LEFT),
-        'cae' => $res['FeDetResp']['FECAEDetResponse'][0]['CAE'],
-        'tipo' => tipoFacturaPorCodigo($res['FeCabResp']['CbteTipo']),
-        'ptoVta' => $res['FeCabResp']['PtoVta']
-    ];
+        $lastVoucher = $afip->ElectronicBilling->GetLastVoucher($CUIT, $cbteTipo, $ptoVta);
+        $nroComprobante = $lastVoucher + 1;
+
+        $data = [
+            'CantReg'   => 1,
+            'PtoVta'    => $ptoVta,
+            'CbteTipo'  => $cbteTipo,
+            'Concepto'  => 1,           // Productos
+            'DocTipo'   => $docTipo,    // 99 = consumidor final, 80 = CUIT, etc.
+            'DocNro'    => $docNro,
+            'CbteDesde' => $nroComprobante,
+            'CbteHasta' => $nroComprobante,
+            'CbteFch'   => date('Ymd'),
+            'ImpTotal'  => $monto,
+            'ImpNeto'   => $monto,
+            'ImpIVA'    => 0.00,
+            'MonId'     => 'PES',
+            'MonCotiz'  => 1
+        ];
+
+        Logger::logWebhook("🧾 Solicitando comprobante a AFIP: " . json_encode($data));
+
+        $res = $afip->ElectronicBilling->CreateNextVoucher($data);
+
+        Logger::logWebhook("✅ Comprobante emitido. CAE: " . $res['FeDetResp']['FECAEDetResponse'][0]['CAE']);
+
+        return [
+            'numero'       => $res['FeCabResp']['CbteDesde'], // ej: 12 (INT)
+            'nroFormateado'=> str_pad($res['FeCabResp']['PtoVta'], 4, '0', STR_PAD_LEFT) . '-' .
+                            str_pad($res['FeCabResp']['CbteDesde'], 8, '0', STR_PAD_LEFT),
+            'cae'          => $res['FeDetResp']['FECAEDetResponse'][0]['CAE'],
+            'tipo'         => tipoFacturaPorCodigo($res['FeCabResp']['CbteTipo']),
+            'ptoVta'       => $res['FeCabResp']['PtoVta']
+        ];
+        
+    } catch (\Throwable $th) {
+        Logger::logWebhook("❌ Error al emitir factura: " . $th->getMessage());
+        echo "❌ Error al emitir factura: " . $th->getMessage();
+        return [
+            'numero' => '0000-00000000',
+            'cae'    => 'ERROR',
+            'tipo'   => 'Error',
+            'ptoVta' => 0
+        ];
+    }
 }
+
+
 
 function tipoFacturaPorCodigo($codigo): string {
     return match ($codigo) {
