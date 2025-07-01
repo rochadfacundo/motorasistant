@@ -52,6 +52,9 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
     require_once __DIR__ . '/../vendor/autoload.php';
     require_once __DIR__ . '/logger.php';
 
+    Logger::logWebhook("🛡 Preparando autenticación con AFIP...");
+    prepararAutenticacionAfip();
+
     $CUIT = "30718607961";
     $afip = new Afip([
         'CUIT' => $CUIT,

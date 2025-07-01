@@ -8,7 +8,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL & ~E_DEPRECATED);
 
 // ID del pago aprobado real
-$paymentId = '115822177499';
+$paymentId = '116504937181';
 
 
 $pago = MercadoPagoService::obtenerPagoPorId($paymentId);

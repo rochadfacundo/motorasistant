@@ -23,14 +23,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $apellido = $_POST['apellido'] ?? 'SinApellido';
     $email = $_POST['email'] ?? 'correo@invalido.com';
     $contrato = $_POST['contrato'] ?? '0000';
+    $tipoFactura = $_POST['tipo_factura'] ?? 'B';
     $monto = floatval($_POST['monto']) ?: 1;
 
     $client = new PreferenceClient();
 
         $backUrls = [
-            "success" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/success.php",
-            "failure" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/failure.php",
-            "pending" => "https://9ca6-2802-8010-b1ed-1000-7dbc-9d78-8214-87c7.ngrok-free.app/redirects/pending.php",
+            "success" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/success.php",
+            "failure" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/failure.php",
+            "pending" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/pending.php",
         ];
 
 
@@ -94,6 +95,14 @@ require_once __DIR__ . '/../head.php';
                 <option value="0302">Contrato 0302</option>
                 <option value="0303">Contrato 0303</option>
                 <option value="0304">Contrato 0304</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="tipo_factura" class="form-label">Tipo de factura</label>
+            <select class="form-select" name="tipo_factura" required>
+                <option value="A">Factura A</option>
+                <option value="B" selected>Factura B</option>
+                <option value="C">Factura C</option>
             </select>
         </div>
         <div class="col-md-6">
