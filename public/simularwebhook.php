@@ -10,7 +10,7 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 // ID del pago aprobado real
 $paymentId = '116504937181';
 
-
+$tipoFactura='B';
 $pago = MercadoPagoService::obtenerPagoPorId($paymentId);
 
 if ($pago) {
@@ -21,7 +21,7 @@ if ($pago) {
             echo "⚠️ Ya existe una factura para el pago {$pago->id}\n";
         } else {
             echo "🧾 Generando factura...\n";
-            FacturaService::generarYGuardarFactura($pago);
+            FacturaService::generarYGuardarFactura($pago, $tipoFactura);
         }
     } else {
         echo "⚠️ El pago no está aprobado. Estado actual: {$pago->status}\n";

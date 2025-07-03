@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL & ~E_DEPRECATED);
+require_once __DIR__ . '/../../services/mercadoPago.php';
+require_once __DIR__ . '/../../services/facturaService.php';
 require_once __DIR__ . '/../../utils/db.php';
 require_once __DIR__ . '/../../head.php';
 require_once __DIR__ . '/../../header.php';
@@ -6,10 +9,10 @@ require_once __DIR__ . '/../../header.php';
 $pageTitle = "Pago aprobado";
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 $data = $_GET;
 $pagoExitoso = false;
+$rutaPdf = null;
 
 try {
     $pdo = DB::getConnection();
@@ -42,6 +45,36 @@ try {
 
     $stmt->execute();
     $pagoExitoso = true;
+
+    $pago = MercadoPagoService::obtenerPagoPorId($data['payment_id']);
+
+    if ($pago && $pago->status === 'approved') {
+
+        $tipoFactura = 'B'; // por defecto
+
+        try {
+            $stmt = $pdo->prepare("CALL obtenerTipoFacturaPorPreferencia(:pPreferenceId)");
+            $stmt->bindParam(':pPreferenceId', $data['preference_id']);
+            $stmt->execute();
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($result && isset($result['tipo_factura'])) {
+                $tipoFactura = $result['tipo_factura'];
+            }
+        } catch (PDOException $e) {
+            Logger::logWebhook("⚠️ Error al obtener tipo de factura por SP: " . $e->getMessage());
+        }
+
+        FacturaService::generarYGuardarFactura($pago, $tipoFactura);
+
+        // Obtener ruta del PDF desde SP
+        $stmt = $pdo->prepare("CALL obtenerRutaFacturaPorPaymentId(:pPaymentId)");
+        $stmt->bindParam(':pPaymentId', $data['payment_id']);
+        $stmt->execute();
+        $factura = $stmt->fetch(PDO::FETCH_ASSOC);
+        $rutaPdf = $factura['ruta_pdf'] ?? null;
+    }
+
 } catch (PDOException $e) {
     $errorMensaje = $e->getMessage();
 }
@@ -61,7 +94,16 @@ try {
                     Nº de pago: <strong><?= htmlspecialchars($data['payment_id']) ?></strong><br>
                     Referencia: <strong><?= htmlspecialchars($data['external_reference']) ?></strong>
                 </p>
-                <a href="/" class="btn btn-outline-success mt-4">← Volver</a>
+
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <a href="/" class="btn btn-outline-success">← Volver</a>
+
+                    <?php if ($rutaPdf): ?>
+                        <a href="/public/facturas/<?= htmlspecialchars(basename($rutaPdf)) ?>" class="btn btn-outline-primary" download>
+                            📄 Descargar factura
+                        </a>
+                    <?php endif; ?>
+                </div>
             <?php else: ?>
                 <div class="mb-4 text-danger">
                     <i class="bi bi-x-circle-fill" style="font-size: 3rem;"></i>

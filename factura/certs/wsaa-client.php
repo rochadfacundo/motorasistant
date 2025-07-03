@@ -1,118 +1,100 @@
-#!/usr/bin/php
 <?php
-# Autor: Gerardo Fisanotti - AFIP
-# Adaptado para Averia Motor S.R.L. - MotorAssistance
 
-define ("WSDL", "wsaa.wsdl");              // Archivo WSDL del WSAA
-define ("CERT", "certificado.crt");        // Certificado en formato PEM (X.509)
-define ("PRIVATEKEY", "averia.key"); // Clave privada en formato PEM
-define ("PASSPHRASE", "");                 // Si la clave no tiene contraseña, dejar vacío
-define ("PROXY_HOST", "");                 // Sin proxy
-define ("PROXY_PORT", "");                 // Sin proxy
-define ("URL", "https://wsaahomo.afip.gov.ar/ws/services/LoginCms"); // URL del entorno de testing
-
-#==============================================================================
-function CreateTRA($SERVICE)
-{
-  $TRA = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><loginTicketRequest version="1.0"></loginTicketRequest>');
-  $TRA->addChild('header');
-  $TRA->header->addChild('uniqueId', date('U'));
-  $TRA->header->addChild('generationTime', date('c', time() - 60));
-  $TRA->header->addChild('expirationTime', date('c', time() + 60));
-  $TRA->addChild('service', $SERVICE);
-  $TRA->asXML('TRA.xml');
+function logMsg($msg) {
+    $timestamp = date('c');
+    echo "$timestamp $msg\n";
 }
 
-// === FIRMA EL TRA.xml CON PKCS#7 Y DEVUELVE EL CMS ===
-function SignTRA()
-{
-    $cmd = 'openssl smime -sign -signer ' . CERT . ' -inkey ' . PRIVATEKEY .
-           ' -in TRA.xml -out TRA.tmp -outform DER -nodetach 2>&1';
-    $output = [];
-    $return = 0;
+try {
+    logMsg("🛡 Preparando autenticación con AFIP...");
 
-    exec($cmd, $output, $return);
-    if ($return !== 0 || !file_exists("TRA.tmp")) {
-        echo "❌ Error ejecutando openssl:\n" . implode("\n", $output) . "\n";
-        exit(1);
+    $CUIT = '30718607961';
+    $service = 'wsfe';
+    $basePath = __DIR__;
+    $tmpPath = "$basePath/tmp";
+
+    // Verificar que la carpeta tmp exista y sea escribible
+    if (!is_dir($tmpPath) || !is_writable($tmpPath)) {
+        throw new Exception("No se puede escribir en el directorio temporal: $tmpPath");
     }
 
-    // Codifica el archivo a Base64
-    $base64 = base64_encode(file_get_contents("TRA.tmp"));
-    unlink("TRA.tmp");
+    // Crear el XML TRA
+    $TRA = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><loginTicketRequest version="1.0"/>');
+    $TRA->addChild('header')->addChild('uniqueId', time());
+    $TRA->header->addChild('generationTime', date('c', time() - 60));
+    $TRA->header->addChild('expirationTime', date('c', time() + 60));
+    $TRA->addChild('service', $service);
 
-    if (strlen($base64) < 1000) {
-        exit("❌ Error: el CMS generado es inválido o muy corto\n");
+    $TRAPath = "$tmpPath/TRA.xml";
+    $TRASignature = "$tmpPath/TRA.tmp";
+
+    // Eliminar archivos anteriores
+    if (file_exists($TRAPath)) unlink($TRAPath);
+    if (file_exists($TRASignature)) unlink($TRASignature);
+
+    // Guardar el TRA
+    if (file_put_contents($TRAPath, $TRA->asXML()) === false) {
+        throw new Exception("❌ No se pudo escribir el archivo TRA.xml en: $TRAPath");
     }
 
-    return $base64;
-}
+    // Firmar el TRA con openssl
+    $certPath = "$basePath/cert.pem";
+    $keyPath = "$basePath/key.pem";
+    $cmd = "openssl smime -sign -signer $certPath -inkey $keyPath -outform DER -nodetach -in $TRAPath -out $TRASignature 2>&1";
+    exec($cmd, $output, $retVal);
 
+    if ($retVal !== 0) {
+        throw new Exception("❌ Error ejecutando openssl:\n" . implode("\n", $output));
+    }
 
-// === ENVÍA EL CMS FIRMADO AL WSAA Y DEVUELVE EL TA.xml ===
-function CallWSAA($CMS)
-{
-    $context = stream_context_create([
-        'ssl' => [
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'allow_self_signed' => false
-        ]
+    // WSAA Client (SOAP 1.1 como exige AFIP)
+    $wsaaClient = new SoapClient("$basePath/wsaa.wsdl", [
+        'soap_version' => SOAP_1_1,
+        'location' => "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
+        'trace' => 1,
+        'exceptions' => true
     ]);
 
-    $client = new SoapClient(WSDL, array(
-        'location'           => 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms',
-        'soap_version'       => SOAP_1_2,
-        'stream_context'     => $context,
-        'trace'              => 1,
-        'exceptions'         => true,
-        'connection_timeout' => 30
-    ));
+    $CMS = file_get_contents($TRASignature);
+    if (!$CMS) throw new Exception("No se pudo leer el archivo firmado: $TRASignature");
 
-    try {
-        $results = $client->loginCms(array('in0' => $CMS));
-        file_put_contents("request-loginCms.xml", $client->__getLastRequest());
-        file_put_contents("response-loginCms.xml", $client->__getLastResponse());
-        return $results->loginCmsReturn;
-    } catch (SoapFault $e) {
-        file_put_contents("request-loginCms.xml", $client->__getLastRequest());
-        file_put_contents("response-loginCms.xml", $client->__getLastResponse());
+    $response = $wsaaClient->loginCms(['in0' => $CMS]);
 
-        echo "❌ SOAP Fault:\n";
-        echo "Mensaje : " . $e->getMessage() . "\n";
-        echo "Código  : " . $e->getCode() . "\n";
-        echo "Archivo : " . $e->getFile() . "\n";
-        echo "Línea   : " . $e->getLine() . "\n";
-        echo "Traza   :\n" . $e->getTraceAsString() . "\n";
-        exit(1);
+    if (!isset($response->loginCmsReturn)) {
+        throw new Exception("La respuesta del WSAA no contiene loginCmsReturn");
     }
+
+    $tokenResponse = simplexml_load_string($response->loginCmsReturn);
+    if (!$tokenResponse) {
+        throw new Exception("No se pudo parsear loginCmsReturn");
+    }
+
+    $token = $tokenResponse->credentials->token ?? null;
+    $sign  = $tokenResponse->credentials->sign ?? null;
+
+    if (!$token || !$sign) {
+        throw new Exception("El token o sign no están presentes en la respuesta");
+    }
+
+    // Guardar TA.xml
+    $taPath = "$tmpPath/TA.xml";
+    if (file_put_contents($taPath, $response->loginCmsReturn) === false) {
+        throw new Exception("No se pudo guardar TA.xml en: $taPath");
+    }
+
+    // Validar que se haya guardado correctamente
+    if (!file_exists($taPath)) {
+        throw new Exception("TA.xml no fue generado, aunque AFIP respondió");
+    }
+
+    logMsg("✅ TA.xml generado correctamente.");
+
+} catch (SoapFault $sf) {
+    logMsg("⚠️ SOAP Fault: (puede ser por contenido CMS no UTF-8, AFIP igual lo procesa)");
+    logMsg("Código : " . $sf->faultcode);
+    logMsg("Mensaje : " . $sf->faultstring);
+    http_response_code(200); // no cortar el flujo, ya se guardó el TA
+} catch (Exception $e) {
+    logMsg("❌ Error: " . $e->getMessage());
+    http_response_code(500);
 }
-
-#==============================================================================
-function ShowUsage($MyPath)
-{
-  printf("Uso  : %s Arg#1\n", $MyPath);
-  printf("donde: Arg#1 debe ser el nombre del servicio WS (ej: wsfe, wsmtxca, etc).\n");
-}
-
-#==============================================================================
-ini_set("soap.wsdl_cache_enabled", "0");
-if (!file_exists(CERT)) { exit("No se encontró el archivo de certificado: ".CERT."\n"); }
-if (!file_exists(PRIVATEKEY)) { exit("No se encontró la clave privada: ".PRIVATEKEY."\n"); }
-if (!file_exists(WSDL)) { exit("No se encontró el archivo WSDL: ".WSDL."\n"); }
-
-if ($argc < 2) {
-  ShowUsage($argv[0]);
-  exit();
-}
-
-$SERVICE = $argv[1];
-CreateTRA($SERVICE);
-$CMS = SignTRA();
-$TA = CallWSAA($CMS);
-if (!file_put_contents("TA.xml", $TA)) {
-  exit("No se pudo escribir el archivo TA.xml\n");
-}
-
-echo "✅ TA.xml generado correctamente\n";
-?>

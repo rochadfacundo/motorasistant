@@ -48,7 +48,7 @@ function prepararAutenticacionAfip(): void {
     }
 }
 
-function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): array {
+function obtenerDatosFactura(float $monto, string $tipoFactura = 'B', int $docTipo = 99, int $docNro = 0): array {
     require_once __DIR__ . '/../vendor/autoload.php';
     require_once __DIR__ . '/logger.php';
 
@@ -64,12 +64,31 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
     ]);
 
     try {
-        $cbteTipo = 11;
+        switch (strtoupper($tipoFactura)) {
+            case 'A':
+                $cbteTipo = 1;
+                break;
+            case 'B':
+                $cbteTipo = 6;
+                break;
+            case 'C':
+            default:
+                $cbteTipo = 11;
+                break;
+        }
+        
         $ptoVta = 1;
         $concepto = 2;
 
         $lastVoucher = $afip->ElectronicBilling->GetLastVoucher($ptoVta, $cbteTipo);
         $nroComprobante = $lastVoucher + 1;
+
+
+        $incluyeIVA = in_array($cbteTipo, [1, 6]); // A o B
+        $ivaPorcentaje = 21;
+        $importeIVA = $incluyeIVA ? round($monto * $ivaPorcentaje / 121, 2) : 0.00;
+        $importeNeto = $incluyeIVA ? round($monto - $importeIVA, 2) : round($monto, 2);
+        $montoRedondeado = round($importeNeto + $importeIVA, 2);
 
         $data = [
             'CbteTipo'      => $cbteTipo,
@@ -80,11 +99,11 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
             'CbteDesde'     => $nroComprobante,
             'CbteHasta'     => $nroComprobante,
             'CbteFch'       => date('Ymd'),
-            'ImpTotal'      => $monto,
+            'ImpTotal'      => $montoRedondeado,
             'ImpTotConc'    => 0.00,
-            'ImpNeto'       => $monto,
+            'ImpNeto'       => $importeNeto,
             'ImpOpEx'       => 0.00,
-            'ImpIVA'        => 0.00,
+            'ImpIVA'        => $importeIVA,
             'ImpTrib'       => 0.00,
             'CondicionIVAReceptorId' => 5,
             'FchServDesde'  => date('Ymd'),
@@ -94,7 +113,18 @@ function obtenerDatosFactura(float $monto, int $docTipo = 99, int $docNro = 0): 
             'MonCotiz'      => 1.00
         ];
 
+        if ($incluyeIVA) {
+            $data['Iva'] = [
+                [
+                    'Id' => 5, // 21%
+                    'BaseImp' => $importeNeto,
+                    'Importe' => $importeIVA
+                ]
+            ];
+        }
+
         Logger::logWebhook("🧾 JSON enviado a AFIP:\n" . json_encode($data, JSON_PRETTY_PRINT));
+        Logger::logWebhook("🧮 Verificación suma: ImpTotal={$montoRedondeado}, suma=" . ($importeNeto + $importeIVA));
         $res = $afip->ElectronicBilling->CreateVoucher($data);
 
         // Intentar detectar estructura

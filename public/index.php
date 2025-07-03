@@ -1,13 +1,16 @@
 <?php
-
 require_once __DIR__ . '/../vendor/autoload.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL & ~E_DEPRECATED);
 
-use Dotenv\Dotenv;
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
+require_once __DIR__ . '/../utils/db.php'; 
+require_once __DIR__ . '/../services/preferenciaService.php';
 
-$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
 $access_token = $_ENV['MP_ACCESS_TOKEN'];
@@ -28,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $client = new PreferenceClient();
 
-        $backUrls = [
-            "success" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/success.php",
-            "failure" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/failure.php",
-            "pending" => "https://29aa-2802-8010-b18e-fc00-4662-5f77-80f-279d.ngrok-free.app/redirects/pending.php",
-        ];
-
+    $backUrls = [
+        "success" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/success.php",
+        "failure" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/failure.php",
+        "pending" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/pending.php",
+    ];
 
     try {
+        /** Paso 1: Crear preferencia SIN external_reference */
         $preference = $client->create([
             "items" => [[
                 "id" => uniqid(),
@@ -52,10 +55,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "surname" => $apellido,
                 "email" => $email,
             ],
-            "statement_descriptor" => "Motor assistant",
-            "external_reference" => "Contrato$contrato-" . uniqid()
+            "statement_descriptor" => "Motor assistant"
         ]);
+
+        /** Paso 2: Actualizar con external_reference = preference_id */
+        $client->update($preference->id, [
+            "external_reference" => $preference->id
+        ]);
+
         $link = $preference->init_point;
+
+        /** Guardar en la tabla preferencias */
+        PreferenciaService::guardarPreferencia([
+            'preference_id' => $preference->id,
+            'tipo_factura' => $tipoFactura,
+            'nombre' => $nombre,
+            'apellido' => $apellido,
+            'email' => $email,
+            'contrato' => $contrato,
+            'monto' => $monto
+        ]);
+        
     } catch (MPApiException $e) {
         echo "<h1>Error al crear la preferencia (API):</h1>";
         echo "<pre>" . print_r($e->getApiResponse(), true) . "</pre>";
