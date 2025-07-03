@@ -6,7 +6,7 @@ class QrService {
             "fecha" => date('Y-m-d'),
             "cuit" => (int)$params['cuit'],
             "ptoVta" => (int)$params['ptoVta'],
-            "tipoCmp" => (int)$params['tipoCmp'], // Asegurar que sea int
+            "tipoCmp" => (int)$params['tipoCmp'], // que sea int
             "nroCmp" => (int)$params['nroCmp'],
             "importe" => round($params['importe'], 2),
             "moneda" => "PES",

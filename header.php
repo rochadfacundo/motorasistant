@@ -1,6 +1,5 @@
 <?php
 
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -15,15 +14,15 @@ if (!isset($_SESSION['usuario'])) {
     ];
 }
 
-// Define una base URL para el proyecto
+// URL base absoluta desde raíz del dominio
 $baseUrl = '/motorasistant/';
 
 ?>
 
 <nav class="navbar navbar-expand-lg" style="background-color: #f8d7da; color: #dc3545;">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="<?php echo $baseUrl; ?>index.php" style="color: #dc3545;">
-             <img src="<?php echo $baseUrl; ?>assets/logo.png"  alt="MotorAssistant Logo" style="height: 50px; margin-right: 10px;">
+        <a class="navbar-brand d-flex align-items-center" href="<?= $baseUrl ?>public/index.php" style="color: #dc3545;">
+        <img src="/assets/logo.png" alt="MotorAssistant Logo" style="height: 50px; margin-right: 10px;">
             <strong>MotorAssistant</strong>
         </a>
 
@@ -35,29 +34,28 @@ $baseUrl = '/motorasistant/';
             <ul class="navbar-nav ms-auto">
                 <?php if (isset($_SESSION['usuario'])): ?>
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="<?php echo $baseUrl; ?>views/dashboard/dashboard-<?php echo $_SESSION['usuario']['rol']; ?>.php">
+                        <a class="nav-link text-danger" href="<?= $baseUrl ?>views/dashboard/dashboard-<?= $_SESSION['usuario']['rol']; ?>.php">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
                     <?php if ($_SESSION['usuario']['rol'] === 'administrador'): ?>
                         <li class="nav-item">
-                            <a class="nav-link text-danger" href="<?php echo $baseUrl;?>views/dashboard/usuarios.php">
+                            <a class="nav-link text-danger" href="<?= $baseUrl ?>views/dashboard/usuarios.php">
                                 <i class="bi bi-people"></i> Gestionar Usuarios
                             </a>
                         </li>
                     <?php endif; ?>
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="<?php echo $baseUrl; ?>views/auth/logout.php">
+                        <a class="nav-link text-danger" href="<?= $baseUrl ?>views/auth/logout.php">
                             <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
                         </a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link text-danger" href="<?php echo $baseUrl; ?>views/auth/login.php">
+                        <a class="nav-link text-danger" href="<?= $baseUrl ?>views/auth/login.php">
                             <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
                         </a>
                     </li>
-              
                 <?php endif; ?>
             </ul>
         </div>

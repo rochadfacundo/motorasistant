@@ -6,17 +6,18 @@ class PreferenciaService{
         try {
             $pdo = DB::getConnection();
             $stmt = $pdo->prepare("CALL insertarPreferencia(
-                :pPreferenceId, :pTipoFactura, :pNombre, :pApellido, :pEmail, :pContrato, :pMonto
+                :pPreferenceId, :pTipoFactura, :pNombre, :pApellido, :pEmail, :pContrato, :pMonto, :pCuit
             )");
-
+            
             $stmt->execute([
                 ':pPreferenceId' => $data['preference_id'],
-                ':pTipoFactura' => $data['tipo_factura'],
-                ':pNombre' => $data['nombre'],
-                ':pApellido' => $data['apellido'],
-                ':pEmail' => $data['email'],
-                ':pContrato' => $data['contrato'],
-                ':pMonto' => $data['monto']
+                ':pTipoFactura'  => $data['tipo_factura'],
+                ':pNombre'       => $data['nombre'],
+                ':pApellido'     => $data['apellido'],
+                ':pEmail'        => $data['email'],
+                ':pContrato'     => $data['contrato'],
+                ':pMonto'        => $data['monto'],
+                ':pCuit'         => $data['cuit'] ?? null
             ]);
 
             return true;

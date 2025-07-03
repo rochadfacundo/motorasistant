@@ -13,8 +13,64 @@ class GeneradorPDF {
 
         $html = file_get_contents($plantilla);
 
+        // Generar detalle dinámico según tipo de factura
+        $detalleFactura = '';
+
+        if (strtoupper($datos['tipo_factura']) === 'A' && isset($datos['neto'], $datos['iva'])) {
+            $detalleFactura = "
+                <table style='width: 100%; margin-top: 20px; font-size: 14px; border-collapse: collapse;'>
+                    <thead>
+                        <tr>
+                            <th style='text-align: left; border: 1px solid #000;'>Descripción</th>
+                            <th style='text-align: right; border: 1px solid #000;'>Cantidad</th>
+                            <th style='text-align: right; border: 1px solid #000;'>Precio Unitario</th>
+                            <th style='text-align: right; border: 1px solid #000;'>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style='border: 1px solid #000;'>Servicio de asistencia mecánica</td>
+                            <td style='text-align: right; border: 1px solid #000;'>1</td>
+                            <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['neto'], 2, ',', '') . "</td>
+                            <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['neto'], 2, ',', '') . "</td>
+                        </tr>
+                        <tr>
+                            <td colspan='3' style='text-align: right; font-weight: bold; border: 1px solid #000;'>IVA (21%)</td>
+                            <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['iva'], 2, ',', '') . "</td>
+                        </tr>
+                        <tr>
+                            <td colspan='3' style='text-align: right; font-weight: bold; border: 1px solid #000;'>Total</td>
+                            <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['monto'], 2, ',', '') . "</td>
+                        </tr>
+                    </tbody>
+                </table>
+            ";
+        } else {
+            $detalleFactura = "
+            <table style='width: 100%; margin-top: 20px; font-size: 14px; border-collapse: collapse;'>
+                <thead>
+                    <tr>
+                        <th style='text-align: left; border: 1px solid #000;'>Descripción</th>
+                        <th style='text-align: right; border: 1px solid #000;'>Cantidad</th>
+                        <th style='text-align: right; border: 1px solid #000;'>Precio Unitario</th>
+                        <th style='text-align: right; border: 1px solid #000;'>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style='border: 1px solid #000;'>Servicio de asistencia mecánica</td>
+                        <td style='text-align: right; border: 1px solid #000;'>1</td>
+                        <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['monto'], 2, ',', '') . "</td>
+                        <td style='text-align: right; border: 1px solid #000;'>$ " . number_format($datos['monto'], 2, ',', '') . "</td>
+                    </tr>
+                </tbody>
+            </table>
+        ";
+        }
+
+        // Reemplazos
         $html = str_replace(
-            ['<!--NOMBRE_CLIENTE-->', '<!--EMAIL-->', '<!--MONTO-->', '<!--CAE-->', '<!--FECHA_CAE-->', '<!--TIPO_FACTURA-->', '<!--NRO_FACTURA-->'],
+            ['<!--NOMBRE_CLIENTE-->', '<!--EMAIL-->', '<!--MONTO-->', '<!--CAE-->', '<!--FECHA_CAE-->', '<!--TIPO_FACTURA-->', '<!--NRO_FACTURA-->', '<!--DETALLE_FACTURA-->'],
             [
                 $datos['nombre'] . ' ' . $datos['apellido'],
                 $datos['email'],
@@ -22,7 +78,8 @@ class GeneradorPDF {
                 $datos['cae'] ?? 'N/D',
                 $datos['fecha_vencimiento_cae'] ?? 'N/D',
                 $datos['tipo_factura'] ?? 'Desconocido',
-                $datos['nro_factura'] ?? 'N/D'
+                $datos['nro_factura'] ?? 'N/D',
+                $detalleFactura
             ],
             $html
         );
@@ -62,6 +119,25 @@ class GeneradorPDF {
             throw new RuntimeException("No se pudo guardar el PDF.");
         }
 
+        chmod($pdfPath, 0664);
+        Logger::logWebhook("✅ Factura generada correctamente en: $pdfPath");
+
         return $pdfPath;
+    }
+
+    public static function descargarFactura(string $nombreArchivo): void {
+        $ruta = __DIR__ . '/../facturas/' . basename($nombreArchivo);
+
+        if (!file_exists($ruta)) {
+            http_response_code(404);
+            echo "Archivo no encontrado.";
+            exit;
+        }
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($ruta) . '"');
+        header('Content-Length: ' . filesize($ruta));
+        readfile($ruta);
+        exit;
     }
 }

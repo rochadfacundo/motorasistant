@@ -98,11 +98,11 @@ try {
                 <div class="d-flex justify-content-center gap-2 mt-4">
                     <a href="/" class="btn btn-outline-success">← Volver</a>
 
-                    <?php if ($rutaPdf): ?>
-                        <a href="/public/facturas/<?= htmlspecialchars(basename($rutaPdf)) ?>" class="btn btn-outline-primary" download>
-                            📄 Descargar factura
-                        </a>
-                    <?php endif; ?>
+                <?php if ($rutaPdf): ?>
+                    <a href="/facturas/descargarFactura.php?archivo=<?= urlencode(basename($rutaPdf)) ?>" class="btn btn-outline-primary">
+                        📄 Descargar factura
+                    </a>
+                <?php endif; ?>
                 </div>
             <?php else: ?>
                 <div class="mb-4 text-danger">

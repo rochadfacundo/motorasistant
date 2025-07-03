@@ -28,13 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contrato = $_POST['contrato'] ?? '0000';
     $tipoFactura = $_POST['tipo_factura'] ?? 'B';
     $monto = floatval($_POST['monto']) ?: 1;
+    $cuit = $_POST['cuit'] ?? null;
 
     $client = new PreferenceClient();
 
     $backUrls = [
-        "success" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/success.php",
-        "failure" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/failure.php",
-        "pending" => "https://c92d-2802-8010-b18e-fc00-1f49-9930-6727-46aa.ngrok-free.app/redirects/pending.php",
+        "success" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/success.php",
+        "failure" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/failure.php",
+        "pending" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/pending.php",
     ];
 
     try {
@@ -58,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "statement_descriptor" => "Motor assistant"
         ]);
 
-        /** Paso 2: Actualizar con external_reference = preference_id */
+        /**Actualizo con external_reference = preference_id */
         $client->update($preference->id, [
             "external_reference" => $preference->id
         ]);
@@ -73,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'apellido' => $apellido,
             'email' => $email,
             'contrato' => $contrato,
-            'monto' => $monto
+            'monto' => $monto,
+            'cuit'  => $_POST['cuit'] ?? null
         ]);
         
     } catch (MPApiException $e) {
@@ -105,6 +107,10 @@ require_once __DIR__ . '/../head.php';
             <input type="text" class="form-control" name="apellido" required>
         </div>
         <div class="col-md-6">
+    <label for="cuit" class="form-label">CUIT (solo factura A)</label>
+    <input type="text" class="form-control" name="cuit" pattern="\d{11}">
+    </div>
+        <div class="col-md-6">
             <label for="email" class="form-label">Correo electrónico</label>
             <input type="email" class="form-control" name="email" required>
         </div>
@@ -129,8 +135,8 @@ require_once __DIR__ . '/../head.php';
             <label for="monto" class="form-label">Monto a pagar</label>
             <input type="number" class="form-control" name="monto" required step="0.01" min="1">
         </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">Generar botón de pago</button>
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-primary mx-auto">Ir a pagar</button>
         </div>
     </form>
 
