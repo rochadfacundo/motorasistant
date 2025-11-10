@@ -1,27 +1,52 @@
 <?php
+/**
+ * ================================================================
+ * MotorAssistant - Módulo de Pagos con Mercado Pago + Facturación
+ * ---------------------------------------------------------------
+ * Este script gestiona el flujo de creación de una preferencia de pago 
+ * en Mercado Pago (Checkout Pro) y guarda los datos asociados en la bd
+ * para luego continuar el proceso de facturación AFIP.
+ * ================================================================
+ */
 require_once __DIR__ . '/../vendor/autoload.php';
+
+// Configuración de errores (solo desarrollo)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL & ~E_DEPRECATED);
 
+// Imports SDK de Mercado Pago
 use MercadoPago\MercadoPagoConfig;
 use MercadoPago\Client\Preference\PreferenceClient;
 use MercadoPago\Exceptions\MPApiException;
+
+// Dependencias internas
 require_once __DIR__ . '/../utils/db.php'; 
 require_once __DIR__ . '/../services/preferenciaService.php';
 
+
+// Carga de variables de entorno (.env)
 $dotenv = \Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
+// Credenciales de Mercado Pago obtenidas desde .env
 $access_token = $_ENV['MP_ACCESS_TOKEN'];
 $public_key   = $_ENV['MP_PUBLIC_KEY'];
 
+// Inicialización del SDK con el Access Token
 MercadoPagoConfig::setAccessToken($access_token);
 
+// Variables para almacenar la preferencia creada
 $preference = null;
 $link = null;
 
+
+// ===================================================================
+// PROCESAMIENTO DEL FORMULARIO DE PAGO (POST)
+// ===================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Datos del comprador
     $nombre = $_POST['nombre'] ?? 'SinNombre';
     $apellido = $_POST['apellido'] ?? 'SinApellido';
     $email = $_POST['email'] ?? 'correo@invalido.com';
@@ -30,43 +55,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monto = floatval($_POST['monto']) ?: 1;
     $cuit = $_POST['cuit'] ?? null;
 
+    // Instancia del cliente de preferencias
     $client = new PreferenceClient();
 
+    // URLs de retorno del flujo de pago
     $backUrls = [
-        "success" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/success.php",
-        "failure" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/failure.php",
-        "pending" => "https://1180-2802-8010-b18e-fc00-dead-ca5e-d212-d6f4.ngrok-free.app/redirects/pending.php",
+        "success" => "https://4502baeea926.ngrok-free.app/redirects/success.php",
+        "failure" => "https://4502baeea926.ngrok-free.app/redirects/failure.php",
+        "pending" => "https://4502baeea926.ngrok-free.app/redirects/pending.php",
     ];
+    
 
     try {
-        /** Paso 1: Crear preferencia SIN external_reference */
+    /**
+     * PASO 1: CREAR PREFERENCIA EN MERCADO PAGO
+     * ---------------------------------------------------------------
+     * Se crea la preferencia incluyendo el campo external_reference
+     * para poder identificarla luego desde el webhook. 
+     * Esto elimina la necesidad de hacer una llamada "update" adicional.
+     */
         $preference = $client->create([
+            "external_reference" => "CONTRATO_" . $contrato . "_" . time(),
             "items" => [[
-                "id" => uniqid(),
-                "title" => "Contrato $contrato",
+                "id" => uniqid(),  // ID interno único, puede ser del contrato
+                "title" => "Contrato $contrato",  // Descripción del servicio
                 "description" => "Plan seleccionado: $contrato",
                 "quantity" => 1,
                 "unit_price" => $monto
             ]],
             "back_urls" => $backUrls,
-            "auto_return" => "approved",
-            "payment_methods" => ["installments" => 12],
+            "notification_url" => "https://4502baeea926.ngrok-free.app/controller/pagoController.php",
+            "auto_return" => "approved",  // Redirección automática tras pago aprobado
+            "payment_methods" => ["installments" => 12], // Hasta 12 cuotas
             "payer" => [
                 "name" => $nombre,
                 "surname" => $apellido,
                 "email" => $email,
             ],
-            "statement_descriptor" => "Motor assistant"
+            "statement_descriptor" => "Motor assistant" // Texto que aparece en el resumen de tarjeta
         ]);
 
-        /**Actualizo con external_reference = preference_id */
-        $client->update($preference->id, [
-            "external_reference" => $preference->id
-        ]);
-
+        // Link de pago generado por Mercado Pago
         $link = $preference->init_point;
 
-        /** Guardar en la tabla preferencias */
+        /**
+         * ================================================================
+         *  PASO 3: GUARDAR EN BASE DE DATOS
+         * ---------------------------------------------------------------
+         * Guarda los datos principales de la preferencia creada, para 
+         * luego asociarla con el pago y la factura emitida al confirmarse.
+         * ================================================================
+         */
         PreferenciaService::guardarPreferencia([
             'preference_id' => $preference->id,
             'tipo_factura' => $tipoFactura,
@@ -79,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         
     } catch (MPApiException $e) {
+        // Error controlado de la API de Mercado Pago
         echo "<h1>Error al crear la preferencia (API):</h1>";
         echo "<pre>" . print_r($e->getApiResponse(), true) . "</pre>";
     } catch (Exception $e) {
@@ -87,6 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+
+// ===================================================================
+// RENDERIZADO DE LA PÁGINA (Formulario + Botón de pago)
+// ===================================================================
 $pageTitle = "Pago con Checkout Pro";
 require_once __DIR__ . '/../head.php';
 ?>
@@ -97,6 +141,9 @@ require_once __DIR__ . '/../head.php';
 <main class="container my-5 flex-grow-1">
     <h2>Formulario de Compra</h2>
 
+    <!-- =========================================================
+        FORMULARIO PRINCIPAL DE DATOS DEL COMPRADOR
+    ========================================================= -->
     <form method="POST" class="row g-3 mb-5">
         <div class="col-md-6">
             <label for="nombre" class="form-label">Nombre</label>
@@ -140,6 +187,11 @@ require_once __DIR__ . '/../head.php';
         </div>
     </form>
 
+
+     <!-- =========================================================
+         BOTÓN DE PAGO MERCADO PAGO (Checkout Pro)
+         Solo se muestra si la preferencia fue creada correctamente
+         ========================================================= -->   
     <?php if ($preference): ?>
         <h2 class="mt-4">Botón de pago con MercadoPago - Checkout Pro</h2>
         <div id="wallet_wrapper" class="my-4">
@@ -154,6 +206,8 @@ require_once __DIR__ . '/../head.php';
                 }
             });
         </script>
+
+        <!-- Link alternativo (para enviar por mail?) -->
         <p>🔗 Link de pago directo MP:
             <a href="<?= $link ?>" target="_blank"><?= $link ?></a>
         </p>

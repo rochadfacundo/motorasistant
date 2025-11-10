@@ -15,6 +15,8 @@ factura/certs/openssl.cnf
 factura/certs/request-loginCms.xml
 factura/certs/response-loginCms.xml
 factura/tipsFacturacion.txt
+facturas/
+public/
 
 
 # Dependencias de Composer

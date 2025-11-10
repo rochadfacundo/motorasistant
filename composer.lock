@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "173d392f78611dcf3a9cacc4268b4c45",
+    "content-hash": "9882400b38296916647287416254b524",
     "packages": [
         {
             "name": "afipsdk/afip.php",
@@ -160,6 +160,37 @@
                 "source": "https://github.com/DASPRiD/Enum/tree/1.0.6"
             },
             "time": "2024-08-09T14:30:48+00:00"
+        },
+        {
+            "name": "decidir2/php-sdk",
+            "version": "V2.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/payway-ar/sdk-php-ventaonline.git",
+                "reference": "d40c782c5c38310cebb34de13dfe368a59488373"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/payway-ar/sdk-php-ventaonline/zipball/d40c782c5c38310cebb34de13dfe368a59488373",
+                "reference": "d40c782c5c38310cebb34de13dfe368a59488373",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Decidir\\": "Decidir/lib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "SDK para Payway ventas online",
+            "support": {
+                "issues": "https://github.com/payway-ar/sdk-php-ventaonline/issues",
+                "source": "https://github.com/payway-ar/sdk-php-ventaonline/tree/V2.0.3"
+            },
+            "time": "2025-02-05T19:21:35+00:00"
         },
         {
             "name": "dompdf/dompdf",

@@ -1,5 +1,21 @@
 <?php
+/**
+ * ================================================================
+ * MotorAssistant - Pago Rechazado
+ * ---------------------------------------------------------------
+ * Esta vista se muestra cuando Mercado Pago redirige al usuario 
+ * tras un intento de pago que fue rechazado o cancelado.
+ *
+ * Flujo:
+ * 1️ Llega con parámetros GET (payment_id, external_reference, etc.)
+ * 2️ Muestra mensaje de error al usuario
+ * 3️ Ofrece la opción de volver al sitio o intentar nuevamente
+ * ================================================================
+ */
+
 $pageTitle = "Pago rechazado";
+
+// Carga de layout principal
 require '../head.php';
 ?>
 
@@ -11,6 +27,9 @@ require '../head.php';
 $data = $_GET;
 ?>
 
+<!-- ================================================================
+      MENSAJE DE ERROR / PAGO RECHAZADO
+     --------------------------------------------------------------- -->
 <div class="card shadow mx-auto text-center" style="max-width: 600px;">
     <div class="card-body p-5">
         <div class="mb-4 text-danger">

@@ -1,4 +1,18 @@
 <?php
+
+/**
+ * ================================================================
+ * MotorAssistant - Servicio de Facturación AFIP + PDF
+ * ---------------------------------------------------------------
+ * Este servicio gestiona todo el ciclo de facturación tras un pago:
+ * 1️ Verifica si el pago ya fue facturado.
+ * 2️ Obtiene los datos del pago y la preferencia asociada.
+ * 3️ Calcula neto e IVA según el tipo de factura.
+ * 4️ Llama al WSFE de AFIP para emitir el comprobante (CAE).
+ * 5️ Genera el PDF de factura con código QR.
+ * 6️ Guarda los datos en la base y copia el PDF al directorio público.
+ * ================================================================
+ */
 require_once __DIR__ . '/../utils/afipUtils.php';
 require_once __DIR__ . '/../factura/generadorPDF.php';
 require_once __DIR__ . '/../utils/logger.php';
@@ -7,40 +21,86 @@ require_once __DIR__ . '/../services/qrService.php';
 require_once __DIR__ . '/../services/preferenciaService.php';
 require_once __DIR__ . '/../utils/fileUtils.php';
 
+
 class FacturaService {
+
+
+    /**
+     * ================================================================
+     * yaFueFacturado($paymentId)
+     * ---------------------------------------------------------------
+     * Verifica si un pago ya fue procesado previamente para evitar
+     * generar facturas duplicadas.  
+     * Usa el archivo de log `pagos.log` como registro histórico.
+     *
+     * @param string|int $paymentId ID del pago (MercadoPago)
+     * @return bool Verdadero si ya fue registrado
+     * ================================================================
+     */
     public static function yaFueFacturado($paymentId): bool {
 
-    // Cuando el total ya incluye el IVA (como en un pago de MercadoPago), usamos esta lógica:
-    //Fórmula:
-    // - Neto  = Total / (1 + IVA)
-    // - IVA   = Total - Neto
-    // Eje Total = 3.00:
-    // - Neto  = 3.00 / 1.21 = 2.48
-    // - IVA   = 3.00 - 2.48 = 0.52
         $logPath = __DIR__ . '/../logs/pagos.log';
         if (!file_exists($logPath)) return false;
+
+         // Busca el ID dentro del archivo de log (solo simple detección por texto)
         return str_contains(file_get_contents($logPath), (string)$paymentId);
     }
 
+     /**
+     * ================================================================
+     *  generarYGuardarFactura($pago, $tipoFactura)
+     * ---------------------------------------------------------------
+     * Crea y guarda una factura electrónica asociada a un pago
+     * de MercadoPago. Incluye generación de CAE, PDF y registro
+     * en base de datos.
+     *
+     * @param object $pago Objeto de pago devuelto por la API de MP
+     * @param string $tipoFactura Tipo de comprobante: A | B | C
+     * ================================================================
+     */
     public static function generarYGuardarFactura($pago, string $tipoFactura = 'B'): void {
-
         $linea = date('c') . " - ✅ {$pago->id} - {$pago->status} - {$pago->transaction_amount} - {$pago->payer->email}\n";
         file_put_contents(__DIR__ . '/../logs/pagos.log', $linea, FILE_APPEND);
     
         Logger::logWebhook("🔍 Buscando preferencia con ID: " . $pago->external_reference);
         $datosPreferencia = PreferenciaService::obtenerPorPreferenceId($pago->external_reference);
     
-        // Determinar DocTipo y DocNro
+         /**
+         * ================================================================
+         * Determinar tipo y número de documento
+         * ---------------------------------------------------------------
+         * AFIP requiere DocTipo y DocNro:
+         *  - Factura A → CUIT válido (DocTipo 80)
+         *  - Factura B/C → Consumidor final (DocTipo 99)
+         * ================================================================
+         */
         if ($tipoFactura === 'A' && isset($datosPreferencia['cuit']) && preg_match('/^\d{11}$/', $datosPreferencia['cuit'])) {
-            $docTipo = 80;
+            $docTipo = 80; // CUIT
             $docNro = $datosPreferencia['cuit'];
-        } else {
-            $docTipo = 99;
+        } else 
+        {
+            $docTipo = 99; //Consumidor Final
             $docNro = 0;
         }
     
         Logger::logWebhook("📌 DocTipo: $docTipo - DocNro: $docNro");
     
+
+        /**
+         * ================================================================
+         * Cálculo de importes
+         * ---------------------------------------------------------------
+         * Si la factura es tipo A:
+         *   Neto = Total / 1.21
+         *   IVA  = Total - Neto
+         * Si es B o C:
+         *   Total incluye IVA, se muestra directo.
+         * ================================================================
+         * 
+         * Ejemplo Total = 3.00:
+         * - Neto  = 3.00 / 1.21 = 2.48
+         * - IVA   = 3.00 - 2.48 = 0.52
+         */  
         $importeBruto = $pago->transaction_amount;
         $neto = $importeBruto;
         $iva = 0;
@@ -54,9 +114,19 @@ class FacturaService {
             Logger::logWebhook("🧾 Factura B → Total final (IVA incluido): $importeBruto");
         }
     
-        // Llamada a AFIP con el monto correcto (neto si es A)
+
+         /**
+         * ================================================================
+         *  Llamada a AFIP (WSFEv1)
+         * ---------------------------------------------------------------
+         * Se usa la función obtenerDatosFactura() de afipUtils.php
+         * para enviar los datos al WebService de AFIP y obtener
+         * el CAE, número de comprobante, tipo, etc.
+         * ================================================================
+         */
         $afipResponse = obtenerDatosFactura($tipoFactura === 'A' ? $neto : $importeBruto, $tipoFactura, $docTipo, $docNro);
     
+        // Validar respuesta de AFIP
         if (!isset($afipResponse['cae']) || $afipResponse['cae'] === null || $afipResponse['cae'] === 'ERROR') {
             Logger::logWebhook("❌ No se insertó en DB porque la factura no se generó correctamente. CAE: " . var_export($afipResponse['cae'], true));
             return;
@@ -64,6 +134,7 @@ class FacturaService {
     
         Logger::logWebhook("🧪 Respuesta AFIP: " . json_encode($afipResponse));
     
+        // Extraer datos relevantes
         $numeroFactura = $afipResponse['numero'];
         $cae = $afipResponse['cae'];
         $nroFormateado = $afipResponse['nroFormateado'];
@@ -73,6 +144,14 @@ class FacturaService {
         Logger::logWebhook("📤 Email obtenido de preferencia: " . ($datosPreferencia['email'] ?? 'NO DISPONIBLE'));
         Logger::logWebhook("🎯 CAE enviado al QR: " . $cae);
     
+         /**
+         * ================================================================
+         *  Generar URL del QR (validación AFIP)
+         * ---------------------------------------------------------------
+         * Se genera la URL que AFIP exige en el QR del comprobante,
+         * según RG 4892/2020. Luego será insertada en el PDF.
+         * ================================================================
+         */
         $qrUrl = QrService::generarUrlQrAfip([
             'cuit' => 30718607961,
             'ptoVta' => $puntoVenta,
@@ -82,6 +161,14 @@ class FacturaService {
             'cae' => $cae
         ]);
     
+         /**
+         * ================================================================
+         * Preparar datos para PDF
+         * ---------------------------------------------------------------
+         * Se arman los datos finales que serán pasados al generador
+         * de PDF (plantilla, QR, CAE, importes, cliente, etc.)
+         * ================================================================
+         */
         $datos = [
             'nombre' => $datosPreferencia['nombre'] ?? '',
             'apellido' => $datosPreferencia['apellido'] ?? '',
@@ -96,10 +183,22 @@ class FacturaService {
             'nro_factura' => $nroFormateado
         ];
     
+        // Generar el PDF a partir de la plantilla
         $pdfPath = GeneradorPDF::crearFacturaPDF($datos);
         Logger::logWebhook("✅ Factura generada correctamente en: $pdfPath");
     
-        // Guardar en base de datos
+        /**
+         * ================================================================
+         *  Guardar factura en la base de datos
+         * ---------------------------------------------------------------
+         * Usa un Stored Procedure `insertarFactura` para registrar:
+         *  - ID de pago
+         *  - Número de factura
+         *  - CAE
+         *  - Ruta del PDF
+         *  - Tipo de comprobante, punto de venta e importe
+         * ================================================================
+         */
         try {
             $pdo = DB::getConnection();
             $stmt = $pdo->prepare("CALL insertarFactura(
@@ -118,11 +217,11 @@ class FacturaService {
             $stmt->execute();
             Logger::logWebhook("✅ Factura guardada en base de datos.");
     
+            // Copiar factura a directorio público (para descargas)
             FileUtils::copiarFacturaAPublico($pdfPath);
     
         } catch (PDOException $e) {
             Logger::logWebhook("❌ Error al guardar la factura: " . $e->getMessage());
         }
     }
-    
 }

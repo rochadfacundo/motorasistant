@@ -1,7 +1,25 @@
 <?php
+/**
+ * ================================================================
+ * MotorAssistant - Pago Pendiente
+ * ---------------------------------------------------------------
+ * Esta vista se muestra cuando Mercado Pago aún no ha confirmado 
+ * el pago (por ejemplo, transferencias o medios offline).
+ *
+ * Flujo:
+ * 1️ Llega con parámetros GET (payment_id, external_reference)
+ * 2️ Muestra mensaje informativo de estado pendiente
+ * 3️ Permite al usuario volver al sitio o consultar el estado luego
+ * ================================================================
+ */
+
 $pageTitle = "Pago pendiente";
+
+
+// Carga de layout principal
 require '../head.php';
 ?>
+
 
 <body class="d-flex flex-column min-vh-100">
 <?php require '../header.php'; ?>
@@ -11,6 +29,9 @@ require '../head.php';
 $data = $_GET;
 ?>
 
+<!-- ================================================================
+     MENSAJE DE ESTADO PENDIENTE
+     --------------------------------------------------------------- -->
 <div class="card shadow mx-auto text-center" style="max-width: 600px;">
     <div class="card-body p-5">
         <div class="mb-4 text-warning">
