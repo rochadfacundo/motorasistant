@@ -60,9 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // URLs de retorno del flujo de pago
     $backUrls = [
-        "success" => "https://4502baeea926.ngrok-free.app/redirects/success.php",
-        "failure" => "https://4502baeea926.ngrok-free.app/redirects/failure.php",
-        "pending" => "https://4502baeea926.ngrok-free.app/redirects/pending.php",
+        "success" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/success.php",
+        "failure" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/failure.php",
+        "pending" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/pending.php",
     ];
     
 
@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "unit_price" => $monto
             ]],
             "back_urls" => $backUrls,
-            "notification_url" => "https://4502baeea926.ngrok-free.app/controller/pagoController.php",
+            "notification_url" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/controller/pagoController.php",
             "auto_return" => "approved",  // Redirección automática tras pago aprobado
             "payment_methods" => ["installments" => 12], // Hasta 12 cuotas
             "payer" => [

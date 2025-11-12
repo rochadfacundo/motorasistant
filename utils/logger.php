@@ -19,7 +19,7 @@ class Logger {
     public static function logWebhook(string $mensaje): void {
         $logPath = __DIR__ . '/../logs/webhook.log';
         $timestamp = date('c'); // Formato ISO 8601 (ej: 2025-11-10T18:33:12-03:00)
-        $linea = "{$timestamp} {$mensaje}\n";
+        $linea = "{$timestamp} {$mensaje}\n"; 
 
         // Intenta crear el directorio de logs si no existe
         $dirLogs = dirname($logPath);
