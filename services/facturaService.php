@@ -4,7 +4,7 @@
  * ================================================================
  * MotorAssistant - Servicio de Facturación AFIP + PDF
  * ---------------------------------------------------------------
- * Este servicio gestiona todo el ciclo de facturación tras un pago:
+ * Este servicio gestiona todo el ciclo de facturación despues de un pago:
  * 1️ Verifica si el pago ya fue facturado.
  * 2️ Obtiene los datos del pago y la preferencia asociada.
  * 3️ Calcula neto e IVA según el tipo de factura.
@@ -42,7 +42,7 @@ class FacturaService {
         $logPath = __DIR__ . '/../logs/pagos.log';
         if (!file_exists($logPath)) return false;
 
-         // Busca el ID dentro del archivo de log (solo simple detección por texto)
+         // Busca el ID dentro del archivo de log (solo simple detección por texto por ahora - CAMBIAR)
         return str_contains(file_get_contents($logPath), (string)$paymentId);
     }
 
@@ -60,6 +60,8 @@ class FacturaService {
      */
     public static function generarYGuardarFactura($pago, string $tipoFactura = 'B'): void {
         $linea = date('c') . " - ✅ {$pago->id} - {$pago->status} - {$pago->transaction_amount} - {$pago->payer->email}\n";
+        
+        //GUARDA LUEGO EN BD PAGOS
         file_put_contents(__DIR__ . '/../logs/pagos.log', $linea, FILE_APPEND);
     
         Logger::logWebhook("🔍 Buscando preferencia con ID: " . $pago->external_reference);
@@ -80,7 +82,7 @@ class FacturaService {
         } else 
         {
             $docTipo = 99; //Consumidor Final
-            $docNro = 0;
+            $docNro = 0; //DNI o acepta 0 porque no necesita crédito fiscal factura B o C
         }
     
         Logger::logWebhook("📌 DocTipo: $docTipo - DocNro: $docNro");
@@ -146,7 +148,7 @@ class FacturaService {
     
          /**
          * ================================================================
-         *  Generar URL del QR (validación AFIP)
+         *  Genera URL del QR (validación AFIP)
          * ---------------------------------------------------------------
          * Se genera la URL que AFIP exige en el QR del comprobante,
          * según RG 4892/2020. Luego será insertada en el PDF.
@@ -163,9 +165,9 @@ class FacturaService {
     
          /**
          * ================================================================
-         * Preparar datos para PDF
+         * Prepara datos para PDF
          * ---------------------------------------------------------------
-         * Se arman los datos finales que serán pasados al generador
+         * Arma los datos finales que serán pasados al generador
          * de PDF (plantilla, QR, CAE, importes, cliente, etc.)
          * ================================================================
          */
@@ -183,7 +185,7 @@ class FacturaService {
             'nro_factura' => $nroFormateado
         ];
     
-        // Generar el PDF a partir de la plantilla
+        // Genera el PDF a partir de la plantilla
         $pdfPath = GeneradorPDF::crearFacturaPDF($datos);
         Logger::logWebhook("✅ Factura generada correctamente en: $pdfPath");
     
@@ -191,7 +193,7 @@ class FacturaService {
          * ================================================================
          *  Guardar factura en la base de datos
          * ---------------------------------------------------------------
-         * Usa un Stored Procedure `insertarFactura` para registrar:
+         * Usa un Stored Procedure insertarFactura para registrar:
          *  - ID de pago
          *  - Número de factura
          *  - CAE
@@ -217,7 +219,7 @@ class FacturaService {
             $stmt->execute();
             Logger::logWebhook("✅ Factura guardada en base de datos.");
     
-            // Copiar factura a directorio público (para descargas)
+            // Copia factura a directorio público para poder descargarlo
             FileUtils::copiarFacturaAPublico($pdfPath);
     
         } catch (PDOException $e) {

@@ -27,15 +27,15 @@ class PagoController {
 /**
  * Procesa el webhook entrante desde Mercado Pago.
  * 
- * Este método se encarga de validar, registrar y responder al
- * evento de notificación. Solo se procesan eventos del tipo "payment".
+ * Se encarga de validar, registrar y responder al evento de notificación. 
+ * Solo se procesan eventos del tipo "payment".
  */
     public static function procesarWebhook() {
 
         // Log inicial - llegada del webhook
         Logger::logWebhook("↪️ Webhook recibido");
 
-         // Validar método HTTP (solo POST)
+         // Valida método HTTP (solo POST)
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             Logger::logWebhook("❌ Método no permitido: {$_SERVER['REQUEST_METHOD']}");
             http_response_code(405);
@@ -61,7 +61,7 @@ class PagoController {
             return;
         }
 
-         // Extraer ID de pago desde la notificación
+         // Extrae ID de pago desde la notificación
         $paymentId = $input['data']['id'] ?? null;
         if (!$paymentId) {
             Logger::logWebhook("❌ No se encontró 'data.id'");

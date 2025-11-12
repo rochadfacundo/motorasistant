@@ -25,7 +25,7 @@ require_once __DIR__ . '/../../header.php';
 
 $pageTitle = "Pago aprobado";
 
-// Configuración de errores (solo desarrollo)
+// Configuración de errores 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
@@ -42,7 +42,7 @@ try {
 
     /**
      * ================================================================
-     * PASO 1: Registrar pago (SP insertarPago)
+     * Registrar pago (SP insertarPago)
      * ---------------------------------------------------------------
      * Se insertan los datos recibidos en la tabla de pagos utilizando
      * un procedimiento almacenado en MySQL.
@@ -80,10 +80,9 @@ try {
 
     /**
      * ================================================================
-     * PASO 2: Validar pago en Mercado Pago
+     * Validar pago en Mercado Pago
      * ---------------------------------------------------------------
-     * Se consulta la API oficial para confirmar que el pago realmente
-     * esté aprobado (estado 'approved').
+     * Consulta a la API oficial para confirmar que el pago realmente esté aprobado('approved').
      * ================================================================
      */
     $pago = MercadoPagoService::obtenerPagoPorId($data['payment_id']);

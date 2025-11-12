@@ -40,7 +40,7 @@ class QrService {
 
          /**
          * ================================================================
-         * Armar estructura del JSON oficial exigido por AFIP
+         *  estructura del JSON oficial exigido por AFIP
          * ---------------------------------------------------------------
          * Ejemplo (según RG 4892/2020):
          * {
@@ -76,7 +76,7 @@ class QrService {
             "codAut" => (string)$params['cae'] // CAE emitido por AFIP
         ];
 
-        // Registrar JSON previo a codificar (solo para depuración)
+        // depuro
         Logger::logWebhook("📤 JSON para QR:\n" . json_encode($data, JSON_PRETTY_PRINT));
 
          /**

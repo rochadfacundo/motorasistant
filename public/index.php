@@ -60,9 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // URLs de retorno del flujo de pago
     $backUrls = [
-        "success" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/success.php",
-        "failure" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/failure.php",
-        "pending" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/public/redirects/pending.php",
+        "success" => "https://ac19001254c3.ngrok-free.app/motorasistant_mio/public/redirects/success.php",
+        "failure" => "https://ac19001254c3.ngrok-free.app/motorasistant_mio/public/redirects/failure.php",
+        "pending" => "https://ac19001254c3.ngrok-free.app/motorasistant_mio/public/redirects/pending.php",
     ];
     
 
@@ -77,14 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $preference = $client->create([
             "external_reference" => "CONTRATO_" . $contrato . "_" . time(),
             "items" => [[
-                "id" => uniqid(),  // ID interno único, puede ser del contrato
+                "id" => uniqid(),  // ID interno único
                 "title" => "Contrato $contrato",  // Descripción del servicio
                 "description" => "Plan seleccionado: $contrato",
                 "quantity" => 1,
                 "unit_price" => $monto
             ]],
             "back_urls" => $backUrls,
-            "notification_url" => "https://e455ff4d5a1a.ngrok-free.app/motorasistant_mio/controller/pagoController.php",
+            "notification_url" => "https://ac19001254c3.ngrok-free.app/motorasistant_mio/controller/pagoController.php",
             "auto_return" => "approved",  // Redirección automática tras pago aprobado
             "payment_methods" => ["installments" => 12], // Hasta 12 cuotas
             "payer" => [
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "surname" => $apellido,
                 "email" => $email,
             ],
-            "statement_descriptor" => "Motor assistant" // Texto que aparece en el resumen de tarjeta
+            "statement_descriptor" => "Motor asistant" // Texto que aparece en el resumen de tarjeta
         ]);
 
         // Link de pago generado por Mercado Pago
@@ -201,8 +201,8 @@ require_once __DIR__ . '/../head.php';
             const mp = new MercadoPago("<?= $public_key ?>");
             mp.bricks().create("wallet", "wallet_container", {
                 initialization: {
-                    preferenceId: '<?= $preference->id ?>',
-                    redirectMode: 'self'
+                    preferenceId: '<?= $preference->id ?>',  // Sin esto, no sabe qué cobrar.
+                    redirectMode: 'self' // Misma pestaña (puede ser black(nueva) o modal)
                 }
             });
         </script>

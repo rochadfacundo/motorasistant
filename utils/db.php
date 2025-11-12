@@ -22,12 +22,6 @@ class DB {
      * ---------------------------------------------------------------
      * Crea y devuelve una instancia PDO configurada para conexión MySQL.
      *
-     * Configuración:
-     *  - charset: utf8mb4
-     *  - ERRMODE: Exception (errores lanzan PDOException)
-     *  - FETCH_MODE: Assoc
-     *  - Emulación deshabilitada (seguridad y rendimiento)
-     *
      * @return PDO
      * ================================================================
      */

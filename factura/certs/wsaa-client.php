@@ -38,9 +38,14 @@ function emitirFacturaAFIP(float $importe, string $tipoFactura = 'B', int $docTi
     ]);
 
     switch (strtoupper($tipoFactura)) {
-        case 'A': $cbteTipo = 1; break;
-        case 'B': $cbteTipo = 6; break;
-        case 'C': default: $cbteTipo = 11; break;
+        case 'A': 
+            $cbteTipo = 1; 
+            break;
+        case 'B': 
+            $cbteTipo = 6; 
+            break;
+        case 'C': $cbteTipo = 11; 
+            break;
     }
 
     try {
